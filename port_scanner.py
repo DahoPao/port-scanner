@@ -29,6 +29,22 @@ def check_port(host, port, timeout=1.0):
     return result == 0
 
 
+def grab_banner(host, port, timeout=1.0):
+    # some services send a welcome line right after you connect (like ssh)
+    # not all do, so an empty result is normal
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(timeout)
+        s.connect((host, port))
+        s.send(b"\r\n")
+        banner = s.recv(1024).decode("utf-8", errors="ignore").strip()
+        s.close()
+        # keep it one line so the output stays readable
+        return banner.split("\n")[0][:60]
+    except (socket.error, OSError):
+        return ""
+
+
 def get_ports(args):
     if args.mode == "common":
         return COMMON_PORTS
@@ -65,7 +81,11 @@ def scan(args):
     open_ports = []
     for port in ports:
         if check_port(ip, port, args.timeout):
-            print(f"{GREEN}[+] open  port {port:<6} ({SERVICES.get(port, '?')}){RESET}")
+            service = SERVICES.get(port, "?")
+            print(f"{GREEN}[+] open  port {port:<6} ({service}){RESET}")
+            banner = grab_banner(ip, port, args.timeout)
+            if banner:
+                print(f"    {YELLOW}>{RESET} {banner}")
             open_ports.append(port)
 
     print(f"\n[*] done, {len(open_ports)} open ports:",

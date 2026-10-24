@@ -11,6 +11,8 @@ under the hood.
 - Opens a TCP connection to every port in the chosen range
 - Ports that accept the connection are open, and get printed in green with
   their usual service name: `[+] open  port 22     (ssh)`
+- Tries to grab the service banner, so you see stuff like
+  `> SSH-2.0-OpenSSH_6.6.1p1` under open ports (not every service sends one)
 - Two ways to run it: a menu that loops (so you can scan multiple hosts in
   a row), or normal command line arguments
 
@@ -57,6 +59,6 @@ most countries.
 
 ## Ideas for later
 
-- [ ] grab the service banner after connecting (to show what software is running)
+- [x] grab the service banner after connecting (to show what software is running)
 - [ ] option to save results to a file
 - [ ] UDP scanning
