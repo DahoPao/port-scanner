@@ -3,6 +3,7 @@
 
 import socket
 import argparse
+import sys
 
 # some ports that usually have services running
 COMMON_PORTS = [21, 22, 23, 25, 53, 80, 110, 135, 139, 143, 443, 445,
@@ -46,19 +47,57 @@ def get_ports(args):
     return ports
 
 
+def ask_questions():
+    # no arguments given, so ask the user step by step
+    print("simple tcp port scanner")
+    print("----------------------")
+    host = input("host to scan (example: scanme.nmap.org): ").strip()
+    print()
+    print("1. common ports (fast)")
+    print("2. all ports 1-65535 (slow)")
+    print("3. custom ports")
+    choice = input("pick 1, 2 or 3: ").strip()
+    print()
+
+    ports = ""
+    if choice == "3":
+        ports = input("ports (example: 22,80,443 or 1-1024): ").strip()
+
+    if choice == "2":
+        mode = "all"
+    elif choice == "3":
+        mode = "custom"
+    else:
+        mode = "common"
+
+    # build a fake args object so the rest of the code stays the same
+    class Args:
+        pass
+
+    args = Args()
+    args.host = host
+    args.mode = mode
+    args.ports = ports
+    args.timeout = 1.0
+    return args
+
+
 def main():
-    parser = argparse.ArgumentParser(description="simple tcp port scanner")
-    parser.add_argument("host", help="host to scan (ip or name)")
-    parser.add_argument("-m", "--mode", choices=["common", "all", "custom"],
-                        default="common", help="which ports to scan")
-    parser.add_argument("-p", "--ports", default="",
-                        help="ports for custom mode, example: 22,80,443")
-    parser.add_argument("-t", "--timeout", type=float, default=1.0,
-                        help="timeout per port in seconds")
-    args = parser.parse_args()
+    if len(sys.argv) > 1:
+        parser = argparse.ArgumentParser(description="simple tcp port scanner")
+        parser.add_argument("host", help="host to scan (ip or name)")
+        parser.add_argument("-m", "--mode", choices=["common", "all", "custom"],
+                            default="common", help="which ports to scan")
+        parser.add_argument("-p", "--ports", default="",
+                            help="ports for custom mode, example: 22,80,443")
+        parser.add_argument("-t", "--timeout", type=float, default=1.0,
+                            help="timeout per port in seconds")
+        args = parser.parse_args()
+    else:
+        args = ask_questions()
 
     if args.mode == "custom" and not args.ports:
-        print("custom mode needs -p, example: -p 22,80,443")
+        print("custom mode needs ports, example: 22,80,443")
         return
 
     # resolve the hostname to an ip
