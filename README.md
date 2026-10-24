@@ -1,28 +1,33 @@
 # port-scanner
 
-A simple TCP connect port scanner written in pure Python (`socket.socket`, no external libraries).
+A simple TCP port scanner in pure Python (only the standard library, no pip installs).
 
-Built as a learning project while studying networking (CCNA) and security fundamentals.
+I'm a computer engineering student learning networking (working on CCNA) and
+security, so I built this to understand how port scanning actually works
+under the hood.
 
 ## What it does
 
-- Connects to each port in the chosen range using a TCP connect scan
-- Shows open ports in green with their common service name (`[+] open port 22 (ssh)`)
+- Opens a TCP connection to every port in the chosen range
+- Ports that accept the connection are open, and get printed in green with
+  their usual service name: `[+] open  port 22     (ssh)`
+- Two ways to run it: a menu that loops (so you can scan multiple hosts in
+  a row), or normal command line arguments
 
-## Usage
+## How to run it
 
-```bash
-# scan the most common ports (default)
-python port_scanner.py scanme.nmap.org
+Just run it with no arguments and answer the questions:
 
-# scan ALL 65535 ports (slower)
-python port_scanner.py scanme.nmap.org -m all
+```
+python port_scanner.py
+```
 
-# custom list: single ports and ranges
+Or pass arguments directly:
+
+```
+python port_scanner.py scanme.nmap.org                 # scan common ports
+python port_scanner.py 192.168.1.1 -m all              # all 65535 ports (slow)
 python port_scanner.py 192.168.1.1 -m custom -p 22,80,443,8000-8100
-
-# tweak the timeout
-python port_scanner.py 192.168.1.1 -t 0.5
 ```
 
 Options:
@@ -37,18 +42,21 @@ Options:
 
 For every port the scanner creates a TCP socket, sets a timeout, and calls
 `connect_ex()` against `(ip, port)`. A return value of `0` means the
-connection succeeded, so the port is open. Any other result is skipped.
+connection succeeded, so the port is open. Anything else means closed or
+filtered, so it gets skipped.
+
 It checks ports one by one, so a full 65535 port scan takes a while —
 that's the tradeoff for keeping the code simple.
 
 ## Legal note
 
-Only scan systems you own or have explicit written permission to test
-(for example, `scanme.nmap.org`, which Nmap provides for this purpose).
-Scanning hosts without permission is illegal in most countries.
+Only scan systems you own or have permission to test.
+`scanme.nmap.org` is a machine Nmap set up exactly for this, so it's a
+safe target to try. Scanning hosts without permission is illegal in
+most countries.
 
-## TODO / ideas
+## Ideas for later
 
-- [ ] service version detection (banner grabbing)
-- [ ] `-o` option to save results to a file
-- [ ] UDP scan mode
+- [ ] grab the service banner after connecting (to show what software is running)
+- [ ] option to save results to a file
+- [ ] UDP scanning
