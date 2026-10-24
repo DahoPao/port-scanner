@@ -47,17 +47,44 @@ def get_ports(args):
     return ports
 
 
+def scan(args):
+    if args.mode == "custom" and not args.ports:
+        print("custom mode needs ports, example: 22,80,443")
+        return
+
+    # resolve the hostname to an ip
+    try:
+        ip = socket.gethostbyname(args.host)
+    except socket.gaierror:
+        print("could not resolve host:", args.host)
+        return
+
+    ports = get_ports(args)
+    print(f"{YELLOW}[*] scanning {args.host} ({ip}), {len(ports)} ports{RESET}")
+
+    open_ports = []
+    for port in ports:
+        if check_port(ip, port, args.timeout):
+            print(f"{GREEN}[+] open  port {port:<6} ({SERVICES.get(port, '?')}){RESET}")
+            open_ports.append(port)
+
+    print(f"\n[*] done, {len(open_ports)} open ports:",
+          ", ".join(str(p) for p in open_ports) if open_ports else "none")
+
+
 def ask_questions():
-    # no arguments given, so ask the user step by step
-    print("simple tcp port scanner")
-    print("----------------------")
-    host = input("host to scan (example: scanme.nmap.org): ").strip()
+    print()
+    print("host to scan (or type q to quit):")
+    host = input("> ").strip()
+    if host.lower() == "q":
+        print("bye")
+        sys.exit(0)
+
     print()
     print("1. common ports (fast)")
     print("2. all ports 1-65535 (slow)")
     print("3. custom ports")
     choice = input("pick 1, 2 or 3: ").strip()
-    print()
 
     ports = ""
     if choice == "3":
@@ -93,35 +120,18 @@ def main():
         parser.add_argument("-t", "--timeout", type=float, default=1.0,
                             help="timeout per port in seconds")
         args = parser.parse_args()
-    else:
-        args = ask_questions()
-
-    if args.mode == "custom" and not args.ports:
-        print("custom mode needs ports, example: 22,80,443")
+        scan(args)
         return
 
-    # resolve the hostname to an ip
+    # no arguments, so run the menu in a loop until the user quits
+    print("simple tcp port scanner")
+    print("----------------------")
     try:
-        ip = socket.gethostbyname(args.host)
-    except socket.gaierror:
-        print("could not resolve host:", args.host)
-        return
-
-    ports = get_ports(args)
-    print(f"{YELLOW}[*] scanning {args.host} ({ip}), {len(ports)} ports{RESET}")
-
-    open_ports = []
-    for port in ports:
-        try:
-            if check_port(ip, port, args.timeout):
-                print(f"{GREEN}[+] open  port {port:<6} ({SERVICES.get(port, '?')}){RESET}")
-                open_ports.append(port)
-        except KeyboardInterrupt:
-            print("\nstopped by user")
-            return
-
-    print(f"\n[*] done, {len(open_ports)} open ports:",
-          ", ".join(str(p) for p in open_ports) if open_ports else "none")
+        while True:
+            args = ask_questions()
+            scan(args)
+    except KeyboardInterrupt:
+        print("\nbye")
 
 
 main()
